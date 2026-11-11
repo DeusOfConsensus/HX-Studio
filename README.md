@@ -1,26 +1,66 @@
-# HX Studio
+# HX Studio — engine-first build (Phase 1 foundations + Phase 2)
 
-Browser-based heat exchanger workbench built with React, TypeScript and Three.js.
+Browser-based 3D heat exchanger design & simulation platform. This drop delivers the
+**calculation engine, fluid library, unit system, validation, temperature-profile solver and design-mode
+sizing**, fully tested. The React/Three.js/Tailwind interface, 3D geometry, charts and reporting are **not
+built yet** (Phases 3–7 of the spec); dependencies for them are already installed.
 
-## Run locally
-
-Requires Node.js 20.19+ or 22.12+.
-
-```sh
+```
 npm install
-npm run dev
+npm run typecheck   # tsc --noEmit
+npm test            # vitest, 99 tests
 ```
 
-Create a production bundle with `npm run build`. Run the engineering calculation checks with `npm test`.
+## Implementation assessment
 
-## Current implementation
+| Spec area | Status |
+|---|---|
+| Repo inspection | Workspace was empty — greenfield |
+| Phase 1: architecture, units, sample configuration, validation | Done (no UI/state stores yet) |
+| Phase 2: all 15 parameters, parallel/counter/multipass relations, fluid library, tests | Done |
+| Design-mode sizing (solve L, Nt or di) | Done (`simulation/solvers/sizing.ts`) |
+| Temperature profiles (numerical, RK4) | Done (engine side) |
+| Phase 3–4: Three.js geometry, flow/thermal visualisation | Not started |
+| Phase 5: responsive UI, landing page ("Built by Asmodeus") | Not started |
+| Phase 6: performance charts/sensitivity UI | Not started (engine supports re-evaluation) |
+| Phase 7: PDF/CSV/JSON reporting | Not started |
 
-- Parametric shell-and-tube and double-pipe visual geometry, orbit/zoom controls, animated flow markers, selectable parallel/counter-current arrangement, and pause/quality controls.
-- Editable hot and cold stream properties and primary geometry inputs.
-- Local JSON project import/export and engineering results CSV export.
-- Thermal resistance network, ideal single-pass LMTD and effectiveness–NTU calculations, tube-side Reynolds/Nusselt/Prandtl estimates, preliminary shell-side estimates, pressure drop and pump power.
-- Responsive workbench and calculated endpoint temperature profile visualization.
+## Engineering methods
 
-## Engineering scope and limits
+- **Internal units**: SI, °C for temperature (differences identical to K). Display conversion is separate
+  (`engineering/units`), with distinct absolute vs. delta temperature conversion.
+- **Rating mode**: outlets solved with ε–NTU; fluid properties iterated at mean bulk temperature.
+  **Duty mode**: both outlets specified; hot/cold balances compared and the discrepancy reported;
+  LMTD/F → required vs. available area.
+- **Flow arrangement** is a real configuration: it selects the LMTD terminal differences, the ε–NTU relation,
+  and the temperature-profile boundary conditions. Multipass shell-and-tube (even tube passes, N shell
+  passes) uses the shell-and-tube ε–NTU relations; F is derived from ε–NTU and cross-checked against the
+  Bowman closed form (exact agreement for one shell). The `flow` flag is ignored for multipass units.
+- **Correlations**: Hausen (laminar), Gnielinski (turbulent, auto), Dittus–Boelter, Sieder–Tate (user
+  selectable, validity-checked), transitional band flagged as indicative; Kern shell-side Nu and ΔP;
+  Haaland/Darcy tube friction with Sinnott minor-loss heads; annulus via hydraulic diameter.
+- **Temperature profile**: 1-D bulk energy balance, RK4, counterflow BVP solved by exact linear shooting.
+  Multipass units show an *equivalent counterflow* profile (flagged), not a resolved pass-by-pass profile.
+  This is not CFD.
 
-This is an early engineering prototype, not a certified equipment rating tool. Properties are entered manually. The shell-side hydraulic model and convection correlations are preliminary. The idealized LMTD and effectiveness–NTU calculations do not yet apply multipass correction factors. It does not implement Bell–Delaware, a verified property package, design optimization, CFD, a full sensitivity sweep, or PDF reporting. Confirm all assumptions and results against validated references before engineering use.
+## Known limitations (read before relying on results)
+
+1. **Fluid library**: water (0–150 °C), air (250–600 K, ideal-gas density), pure ethylene glycol
+   (273–373 K). Values were entered from textbook tables and should be re-verified against the cited
+   sources before real use. Propylene glycol, thermal oils and steam are **not** included — enter manually.
+   Water is treated as liquid; no pressure/saturation check yet.
+2. **Shell side is Kern, preliminary**: no leakage/bypass/window corrections (Bell–Delaware is the next step).
+   Nozzle losses excluded. Wall-viscosity correction taken as 1.
+3. **Annulus (double-pipe)** uses Dh = D₂ − D₁ for Re, f and Nu — an approximation.
+4. **Only even tube-pass counts** are supported for multipass; odd counts are rejected, not approximated.
+5. Tube-count/bundle fit is an approximate area screen, not a layout count.
+6. Fouling is a user input (not predicted). One overall pump efficiency for both circuits.
+7. Sizing solves one variable at a time by bisection; non-monotonic cases return `no_bracket`.
+
+## Layout
+
+```
+src/engineering/   types, units, properties, correlations, calculations, validation, sample config
+src/simulation/    solvers (main solver + sizing), temperatureProfiles
+src/tests/         calculations, integration, validation
+```
