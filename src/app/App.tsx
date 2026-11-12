@@ -12,6 +12,7 @@ import { validateSchema } from "../engineering/validation/inputValidation";
 import { SiteNav } from "./landing/Navigation";
 import type { SiteRoute } from "./landing/routes";
 import { LandingPage } from "./landing/Landing";
+import { OverviewDashboard } from "./OverviewDashboard";
 const HxCanvas = lazy(() => import("../three/scenes/HxCanvas").then((m) => ({ default: m.HxCanvas })));
 const LabelOverlay = lazy(() => import("../three/scenes/labels").then((m) => ({ default: m.LabelOverlay })));
 const PerformancePanel = lazy(() => import("./PerformancePanel").then((m) => ({ default: m.PerformancePanel })));
@@ -42,7 +43,7 @@ function exportReport(input: ExchangerInput, ev: ReturnType<typeof evaluate>) {
 }
 
 export function App() {
-  const [page, setPage] = useState<Page>("Overview");
+  const [page, setPage] = useState<Page>(() => window.location.pathname === "/simulator" ? "3D Simulator" : "Overview");
   const [route, setRoute] = useState<SiteRoute>(routeFromLocation);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -55,7 +56,12 @@ export function App() {
   const s = ev.state;
 
   useEffect(() => {
-    const updateRoute = () => setRoute(routeFromLocation());
+    const updateRoute = () => {
+      const next = routeFromLocation();
+      setRoute(next);
+      if (next === "Simulator") setPage("3D Simulator");
+      else if (next === "Home") setPage("Overview");
+    };
     window.addEventListener("popstate", updateRoute);
     return () => window.removeEventListener("popstate", updateRoute);
   }, []);
@@ -103,11 +109,12 @@ export function App() {
         <nav className="simulator-tabs" aria-label="Simulator workspace">
           {pages.map(label => <button key={label} type="button" aria-pressed={page === label} onClick={() => setPage(label)}>{label}</button>)}
         </nav>
-        {page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : <main className="simulator-main lg:grid lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_350px] xl:overflow-hidden">
-        <aside className="order-2 shrink-0 lg:order-1 lg:row-span-2 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Engineering inputs">
-          <InputPanel />
+        {page === "Overview" ? <OverviewDashboard input={input} ev={ev} onOpen={setPage}/> : page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : <main className={`simulator-main ${page === "Geometry Designer" ? "lg:grid lg:grid-cols-[320px_minmax(0,1fr)]" : "lg:grid lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_350px]"} xl:overflow-hidden`}>
+        <aside className={`${page === "Geometry Designer" ? "order-1" : "order-2"} min-w-0 shrink-0 lg:order-1 lg:row-span-2 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--sidebar)" }} aria-label={page === "Geometry Designer" ? "Geometry design inputs" : "Engineering inputs"}>
+          {page === "Geometry Designer" ? <div className="px-3 pt-3"><p className="overview-eyebrow">PARAMETRIC DESIGN</p><h1 className="m-0 text-lg font-semibold">Geometry designer</h1><p className="hx-label mt-1">Edit dimensions and see the model respond immediately.</p></div> : null}
+          <InputPanel focus={page === "Geometry Designer" ? "geometry" : "all"}/>
         </aside>
-        <section className={`${page === "Engineering Calculator" ? "hidden" : "flex"} order-1 min-w-0 shrink-0 flex-col lg:order-2 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--workspace)" }} aria-label="3D simulator">
+        <section className={`${page === "Engineering Calculator" ? "hidden" : "flex"} ${page === "Geometry Designer" ? "order-2" : "order-1"} min-w-0 shrink-0 flex-col lg:order-2 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--workspace)" }} aria-label={page === "Geometry Designer" ? "Geometry preview" : "3D simulator"}>
           <ViewToolbar />
           <div className="relative h-[56dvh] shrink-0 lg:h-[62dvh] xl:h-auto xl:min-h-[480px] xl:flex-1">
             <ErrorBoundary>
@@ -126,11 +133,11 @@ export function App() {
               </div>
             ) : null}
           </div>
-          <DisplayPanel components={components} />
+          {page !== "Engineering Calculator" ? <DisplayPanel components={components} /> : null}
         </section>
-        <aside className={`${page === "Geometry Designer" ? "hidden xl:block" : ""} order-3 shrink-0 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--sidebar)" }} aria-label="Calculation results">
+        {page !== "Geometry Designer" ? <aside className="order-3 min-w-0 shrink-0 xl:min-h-0 xl:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Calculation results">
           <ResultsPanel ev={ev} layout={layout} components={components} />
-        </aside>
+        </aside> : null}
       </main>}
       <footer className="flex flex-wrap items-center gap-x-4 border-t px-3 py-1 text-[11px]" style={{ borderColor: "var(--border)", background: "var(--sidebar)", color: "var(--text2)" }}>
         <span>{ev.ok ? "✓ Calculated" : "✕ Not calculated"}</span>

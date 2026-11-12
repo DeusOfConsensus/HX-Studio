@@ -42,7 +42,8 @@ function PresentationCamera({ g }: { g: ReturnType<typeof effectiveGeometry> }) 
     const d = Math.hypot(g.L / 2 + 0.55, g.Ds / 2 + 0.4);
     const vHalf = THREE.MathUtils.degToRad(camera.fov) / 2;
     const hHalf = Math.atan(Math.tan(vHalf) * (size.width / size.height));
-    const distance = d / Math.sin(Math.min(vHalf, hHalf)) * 0.82;
+    const zoom = size.width < 700 ? 0.48 : 0.52;
+    const distance = d / Math.sin(Math.min(vHalf, hHalf)) * zoom;
     camera.position.set(distance * 0.38, distance * 0.26, distance * 0.9);
     camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
