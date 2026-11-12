@@ -52,6 +52,5 @@ export function OverviewDashboard({ input, ev, onOpen }: { input: ExchangerInput
         </div>
       </section>
     </div>
-    <p className="overview-footnote">Correlation-based preliminary results · 1-D bulk thermal model · not CFD or certified design</p>
   </main>;
 }
