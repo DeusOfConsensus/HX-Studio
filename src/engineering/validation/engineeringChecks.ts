@@ -1,5 +1,6 @@
 /** Cross-field engineering consistency checks. Errors block calculation; warnings do not. */
 import type { ExchangerInput, Issue } from "../types";
+import { tubeCapacity } from "../calculations/tubeCount";
 
 const err = (code: string, message: string, field?: string): Issue => ({ severity: "error", code, message, field });
 const warn = (code: string, message: string, field?: string): Issue => ({ severity: "warning", code, message, field });
@@ -54,11 +55,10 @@ export function checkEngineering(input: ExchangerInput): Issue[] {
       out.push(err("SHELL_PASSES", "Multiple shell passes require at least 2 tube passes per shell in this model.", "geometry.tubePasses"));
     }
     if (g.Nt < g.tubePasses) out.push(err("PASS_TUBES", "Fewer tubes than tube passes.", "geometry.Nt"));
-    // Approximate bundle-fit screen (area ratio, NOT a layout count)
-    const cell = g.arrangement === "triangular" ? 0.866 * g.pitch * g.pitch : g.pitch * g.pitch;
-    const bundleArea = (Math.PI / 4) * g.Ds * g.Ds;
-    if (g.Nt * cell > 0.9 * bundleArea) {
-      out.push(warn("BUNDLE_FIT", "Tube count may not fit in this shell diameter (approximate area screen; do a proper tube-count layout)."));
+    // Geometric lattice capacity (shared with the 3D layout so drawing and calculation agree)
+    const cap = tubeCapacity(g.pitch, g.arrangement, g.Ds, dOut);
+    if (g.Nt > cap) {
+      out.push(warn("BUNDLE_FIT", `Only ${cap} tubes fit in a ${(g.Ds * 1000).toFixed(0)} mm shell at ${(g.pitch * 1000).toFixed(1)} mm ${g.arrangement} pitch, but Nt = ${g.Nt}. Calculations use Nt as entered; the 3D model can draw only ${cap}.`, "geometry.Nt"));
     }
   }
 

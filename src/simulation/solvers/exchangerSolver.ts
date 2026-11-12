@@ -89,7 +89,7 @@ export interface SolvedState {
 
 const warn = (code: string, message: string): Issue => ({ severity: "warning", code, message });
 
-function effectiveGeometry(g: GeometryInput): GeometryInput {
+export function effectiveGeometry(g: GeometryInput): GeometryInput {
   if (g.type === "double-pipe") return { ...g, Nt: 1, tubePasses: 1, shellPasses: 1 };
   return g;
 }

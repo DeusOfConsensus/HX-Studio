@@ -20,7 +20,7 @@ export const sampleConfiguration: ExchangerInput = {
     di: 0.01575,
     t: 0.00165,
     L: 2.44,
-    Nt: 40,
+    Nt: 32, // fits the 203 mm shell (lattice capacity 37); Kern tube-count table lists 30 for 2 passes
     pitch: 0.0254,
     arrangement: "triangular",
     Ds: 0.203,

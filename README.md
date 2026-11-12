@@ -1,29 +1,32 @@
-# HX Studio — engine-first build (Phase 1 foundations + Phase 2)
+# HX Studio — local engineering simulator (integrated first release, with documented limits)
 
-Browser-based 3D heat exchanger design & simulation platform. This drop delivers the
-**calculation engine, fluid library, unit system, validation, temperature-profile solver and design-mode
-sizing**, fully tested. The React/Three.js/Tailwind interface, 3D geometry, charts and reporting are **not
-built yet** (Phases 3–7 of the spec); dependencies for them are already installed.
+Browser-based 3D heat exchanger design and simulation platform. The app integrates a local engineering
+solver, parametric shell-and-tube and double-pipe geometry, flow and thermal visualization, responsive
+workspaces, performance charts, design sizing, and local project/result export. Simplified correlation-based
+results are intended for preliminary analysis and learning, not certification or detailed industrial design.
 
 ```
 npm install
+npm run dev         # open the 3D simulator
 npm run typecheck   # tsc --noEmit
-npm test            # vitest, 99 tests
+npm test            # vitest, 137 tests
+npm run build
 ```
 
 ## Implementation assessment
 
 | Spec area | Status |
 |---|---|
-| Repo inspection | Workspace was empty — greenfield |
-| Phase 1: architecture, units, sample configuration, validation | Done (no UI/state stores yet) |
-| Phase 2: all 15 parameters, parallel/counter/multipass relations, fluid library, tests | Done |
-| Design-mode sizing (solve L, Nt or di) | Done (`simulation/solvers/sizing.ts`) |
-| Temperature profiles (numerical, RK4) | Done (engine side) |
-| Phase 3–4: Three.js geometry, flow/thermal visualisation | Not started |
-| Phase 5: responsive UI, landing page ("Built by Asmodeus") | Not started |
-| Phase 6: performance charts/sensitivity UI | Not started (engine supports re-evaluation) |
-| Phase 7: PDF/CSV/JSON reporting | Not started |
+| Repository assessment | Existing React/TypeScript/Vite app, engineering engine, R3F scenes and 137 tests preserved and extended |
+| Inputs and validation | Local sample configs, fluid library/manual properties, rating and duty modes, validation and units |
+| Engineering calculations | 15 traceable results; parallel, counter and multipass shell-and-tube methods |
+| Design sizing | One variable at a time (L, Nt or di) in duty mode; solver re-runs at each trial |
+| Parametric 3D | Shell-and-tube and double-pipe; camera, selection, exploded view, section plane, hide/isolate |
+| Flow and thermal visualization | Directions and particle animation use selected configuration and calculated velocity; temperature bands derive from 1-D profiles |
+| App workspaces | Overview, simulator, calculator/results, geometry inputs, analysis and documentation navigation |
+| Performance analysis | Temperature profile, sensitivity (nine inputs), duty/effectiveness, pressure drop, Reynolds, resistance and effectiveness–NTU charts |
+| Local reports and files | JSON save/load, CSV results export, print-to-PDF report with model screenshot when browser capture is available |
+| Responsive interface | Responsive stacked, two-column and three-column layouts; keyboard focus, reduced motion and touch-sized controls. Physical touch devices are not formally verified. |
 
 ## Engineering methods
 
@@ -53,14 +56,54 @@ npm test            # vitest, 99 tests
    Nozzle losses excluded. Wall-viscosity correction taken as 1.
 3. **Annulus (double-pipe)** uses Dh = D₂ − D₁ for Re, f and Nu — an approximation.
 4. **Only even tube-pass counts** are supported for multipass; odd counts are rejected, not approximated.
-5. Tube-count/bundle fit is an approximate area screen, not a layout count.
+5. Tube-count fit is a geometric lattice count (one fixed orientation, tubes nearest the axis first); it ignores TEMA pass-partition lanes and tie rods, so real multipass counts are lower.
 6. Fouling is a user input (not predicted). One overall pump efficiency for both circuits.
 7. Sizing solves one variable at a time by bisection; non-monotonic cases return `no_bracket`.
+
+## Workflows and exports
+
+- **Rating** predicts outlet temperatures from geometry and inlet conditions. **Duty** accepts both outlet
+  temperatures and displays the energy-balance discrepancy. Design sizing explicitly solves one selected
+  dimension; other values remain fixed. Unsupported or underdetermined inputs produce an error instead of a guessed result.
+- **Overview** is the lightweight landing page and carries the requested “Built by Asmodeus” attribution.
+  Engineering Calculator shows inputs and all 15 expandable result records; Geometry Designer exposes editable
+  geometry beside the synchronized model; Performance Analysis reruns the solver across selected input changes.
+- **Save JSON / Load JSON** store project configuration locally. **Export CSV** exports parameter values and
+  formulas. **Report / PDF** opens a print-ready local report; choose “Save as PDF” in the browser print dialog.
+
+## 3D notes
+
+- The landing preview and simulator now share `three/scenes/ExchangerAssembly.tsx`, which composes the same
+  `ExchangerModel` and solver-driven `FlowLayer`. Home supplies the preset `sampleConfiguration`; the
+  simulator supplies the active, editable configuration. Presentation state is restored on leaving Home.
+- The brand in the shared navigation uses the provided `/hx-studio-logo.png` asset across Home, Simulator,
+  Documentation and About.
+
+- `three/geometries/layout.ts` is three.js-free and defines tube lattice, pass bands, baffle stations,
+  nozzle placement and the flow plan. The scene, validation and tests all use it, so drawing and calculation share
+  one source of truth (tube capacity lives in `engineering/calculations/tubeCount.ts`).
+- If `Nt` exceeds what fits in the shell, calculations still use `Nt`, a `BUNDLE_FIT` warning is raised and the
+  3D model draws only the tubes that fit. Above 600 tubes the drawing is capped (stated in the UI).
+- Multipass shell-and-tube is drawn as a nominal overall-counter-current arrangement (flagged); the
+  parallel/counter selector is disabled for it, matching the solver.
+- Labels use a custom overlay (`three/scenes/labels.tsx`) because drei `<Html>` dropped a label and threw
+  `removeChild` errors on unmount.
+- The sample's tube count was reduced from 40 to 32: 40 tubes did not physically fit a 203 mm shell.
+
+## Known 3D limitations
+
+- Rear head can leave the frame at high explode values; press **Fit**.
+- Baffles have no tube holes; tube particles are sampled from at most 14 tubes; shell particles avoid tubes.
+- Colours/particles depict a 1-D bulk model, not CFD. Wall temperatures are deliberately not drawn.
+- Not yet tested on real touch devices or with a physical GPU (checked in headless Chromium/SwiftShader).
 
 ## Layout
 
 ```
 src/engineering/   types, units, properties, correlations, calculations, validation, sample config
 src/simulation/    solvers (main solver + sizing), temperatureProfiles
+src/three/         geometries/layout (pure), scenes (R3F), visualizations/thermalField
+src/state/         viewStore (zustand)
+src/app/           workspace UI (inputs, results, view controls)
 src/tests/         calculations, integration, validation
 ```
