@@ -2,12 +2,43 @@ import { create } from "zustand";
 import type { ExchangerInput } from "../engineering/types";
 import { sampleConfiguration, sampleDoublePipe } from "../engineering/sampleConfiguration";
 
+function zeroInputValues(input: ExchangerInput): ExchangerInput {
+  const zeroStream = (stream: ExchangerInput["hot"]) => ({
+    ...stream,
+    Tin: 0,
+    Tout: input.mode === "duty" ? 0 : undefined,
+    mdot: 0,
+    pressure: 0,
+    manual: stream.manual ? { rho: 0, cp: 0, mu: 0, k: 0 } : undefined,
+  });
+  return {
+    ...input,
+    hot: zeroStream(input.hot),
+    cold: zeroStream(input.cold),
+    specifiedQ: 0,
+    geometry: {
+      ...input.geometry,
+      di: 0, t: 0, L: 0, Nt: 0, pitch: 0, Ds: 0,
+      tubePasses: 0, shellPasses: 0, baffleSpacing: 0, baffleCut: 0,
+      kw: 0, roughness: 0,
+    },
+    operating: {
+      ...input.operating,
+      pumpEfficiency: 0, Rfi: 0, Rfo: 0,
+      propertyEvalTemp: input.operating.propertyEvalTemp === undefined ? undefined : 0,
+      velocityLimits: { liquidTube: [0, 0], liquidShell: [0, 0], gas: [0, 0] },
+      energyBalanceTolerance: 0,
+    },
+  };
+}
+
 export type ViewName = "iso" | "front" | "side" | "top" | "fit";
 
 export interface ViewState {
   input: ExchangerInput;
   setInput: (fn: (draft: ExchangerInput) => ExchangerInput) => void;
   loadInput: (x: ExchangerInput) => void;
+  resetInputsToZero: () => void;
   /** Per-type configuration memory so switching exchanger type never discards the other type's edits. */
   stash: Partial<Record<ExchangerInput["geometry"]["type"], ExchangerInput>>;
   switchType: (t: ExchangerInput["geometry"]["type"]) => void;
@@ -44,6 +75,20 @@ export const useView = create<ViewState>((set) => ({
   input: sampleConfiguration,
   setInput: (fn) => set((s) => ({ input: fn(s.input) })),
   loadInput: (x) => set({ input: x, selected: null, selectedTube: null, isolated: null }),
+  resetInputsToZero: () => set((s) => {
+    const shell = s.input.geometry.type === "shell-and-tube" ? s.input : s.stash["shell-and-tube"] ?? sampleConfiguration;
+    const pipe = s.input.geometry.type === "double-pipe" ? s.input : s.stash["double-pipe"] ?? sampleDoublePipe;
+    return {
+      input: zeroInputValues(s.input),
+      stash: { ...s.stash, "shell-and-tube": zeroInputValues(shell), "double-pipe": zeroInputValues(pipe) },
+      selected: null, selectedTube: null, hidden: {}, isolated: null,
+      shellOpacity: 0.25, explode: 0, clipOn: false, clipPos: 0,
+      running: false, speed: 0.8, density: 0.55,
+      showFlow: true, showThermal: true, showTempLabels: false, showNames: false,
+      simNonce: s.simNonce + 1, quality: "low",
+      viewCmd: { name: "iso", n: s.viewCmd.n + 1 },
+    };
+  }),
   stash: { "double-pipe": sampleDoublePipe },
   switchType: (t) =>
     set((s) => {

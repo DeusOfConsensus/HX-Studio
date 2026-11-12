@@ -6,14 +6,15 @@ export function ViewToolbar() {
   const goView = useView((s) => s.goView);
   const running = useView((s) => s.running);
   const setView = useView((s) => s.setView);
+  const resetInputsToZero = useView((s) => s.resetInputsToZero);
   const views: Array<[ViewName, string]> = [["iso", "Isometric"], ["front", "Front"], ["side", "Side"], ["top", "Top"], ["fit", "Fit"]];
   return (
     <div className="flex flex-wrap items-center gap-1 border-b p-2" style={{ borderColor: "var(--border)", background: "var(--sidebar)" }} role="toolbar" aria-label="3D view controls">
       <button type="button" className="hx-btn hx-btn-primary" onClick={() => setView({ running: !running })} aria-label={running ? "Pause simulation" : "Resume simulation"}>
         {running ? "❚❚ Pause" : "▶ Resume"}
       </button>
-      <button type="button" className="hx-btn" onClick={() => setView({ simNonce: useView.getState().simNonce + 1, running: true })}>
-        ↺ Reset
+      <button type="button" className="hx-btn" aria-label="Reset all numeric inputs to zero" title="Clear numeric inputs to zero and start an incomplete design. Use Reset to sample to restore the example configuration." onClick={resetInputsToZero}>
+        ↺ Reset to 0
       </button>
       <span className="mx-1 hidden h-6 border-l sm:block" style={{ borderColor: "var(--border)" }} aria-hidden="true" />
       {views.map(([k, l]) => (

@@ -106,6 +106,7 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
   const switchType = useView((s) => s.switchType);
   const g = input.geometry;
   const dp = g.type === "double-pipe";
+  const zeroDraft = g.di === 0 && g.t === 0 && g.L === 0 && g.Ds === 0 && input.hot.mdot === 0 && input.cold.mdot === 0;
   const setG = (p: Partial<GeometryInput>) => setInput((x) => ({ ...x, geometry: { ...x.geometry, ...p } }));
   const setStream = (w: "hot" | "cold") => (p: Partial<StreamInput>) => setInput((x) => ({ ...x, [w]: { ...x[w], ...p } }) as ExchangerInput);
   const setOp = (p: Partial<ExchangerInput["operating"]>) => setInput((x) => ({ ...x, operating: { ...x.operating, ...p } }));
@@ -126,6 +127,7 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
           {input.mode === "duty" && input.dutySource === "specified" ? <NumField label="Specified heat duty" symbol="Q" unit="kW" scale={1e-3} value={input.specifiedQ} onCommit={(specifiedQ) => setInput((x) => ({ ...x, specifiedQ }))} min={0.001} /> : null}
           <div className="hx-label mt-2 text-[11px]">Rating solves outlet temperatures. Duty mode requires both outlet temperatures and reports energy-balance mismatch.</div>
         </> : <p className="hx-label mt-2 text-[11px]">Choose the exchanger family, then adjust its dimensions below. Changes update the model immediately.</p>}
+        {zeroDraft ? <p className="hx-label mt-2 border-t pt-2 text-[11px]" style={{ borderColor: "var(--border)" }} role="status">Blank design: enter positive geometry, flow rates and pressure before running calculations. Use “Reset to sample” to restore a complete example.</p> : null}
       </div>
       {focus === "all" ? <>
         <FlowSelector />
