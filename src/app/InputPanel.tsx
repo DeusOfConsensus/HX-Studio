@@ -18,7 +18,7 @@ function FlowDiagram({ kind, selected }: { kind: FlowArrangement; selected: bool
     </g>
   );
   return (
-    <svg viewBox="0 0 120 56" className="w-full" aria-hidden="true">
+    <svg viewBox="0 0 120 56" className="flow-diagram" aria-hidden="true">
       <rect x="8" y="6" width="104" height="44" rx="6" fill="none" stroke={selected ? "#00A6A6" : "#354452"} strokeWidth="2" />
       <line x1="8" y1="28" x2="112" y2="28" stroke="#354452" strokeWidth="2" strokeDasharray="4 3" />
       {arrow(17, hotDir, "#E6A23C")}
