@@ -1,7 +1,7 @@
 import type { ExchangerInput } from "../engineering/types";
 import type { Evaluation } from "../simulation/solvers/exchangerSolver";
 
-type Workspace = "3D Simulator" | "Engineering Calculator" | "Geometry Designer" | "Performance Analysis";
+type Workspace = "3D Simulator" | "Engineering Calculator" | "Performance Analysis";
 
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
   return <article className="hx-panel overview-metric"><p>{label}</p><strong>{value}</strong><span>{note}</span></article>;
@@ -41,7 +41,6 @@ export function OverviewDashboard({ input, ev, onOpen }: { input: ExchangerInput
           <div><dt>Hot outlet</dt><dd>{s ? `${fmt(s.ThOut, 4)} °C` : "—"}</dd></div>
           <div><dt>Cold outlet</dt><dd>{s ? `${fmt(s.TcOut, 4)} °C` : "—"}</dd></div>
         </dl>
-        <button type="button" className="hx-btn hx-btn-primary overview-action" onClick={() => onOpen("Geometry Designer")}>Edit geometry <span aria-hidden="true">→</span></button>
       </section>
       <section className="hx-panel overview-card">
         <div className="overview-card-heading"><div><p className="overview-eyebrow">ANALYSIS STATUS</p><h2>{ev.ok ? "Ready to inspect" : "Attention required"}</h2></div><span className="overview-design-icon" aria-hidden="true">⌁</span></div>

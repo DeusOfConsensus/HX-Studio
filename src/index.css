@@ -235,7 +235,6 @@ input[type="range"] {
 .overview-specs div { display: flex; justify-content: space-between; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
 .overview-specs dt { color: var(--text2); }
 .overview-specs dd { margin: 0; color: var(--text); text-align: right; font-weight: 600; }
-.overview-action { display: flex; width: 100%; align-items: center; justify-content: space-between; }
 .overview-issues { display: grid; gap: 8px; margin: 14px 0; padding-left: 19px; color: var(--warn); font-size: 12px; line-height: 1.45; }
 .overview-issues.is-error { color: var(--err); }
 .overview-clean { margin: 16px 0; }

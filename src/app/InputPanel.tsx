@@ -98,7 +98,7 @@ function StreamFields({ which, s, set, duty }: { which: "hot" | "cold"; s: Strea
   );
 }
 
-export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
+export function InputPanel() {
   const [sizingVariable, setSizingVariable] = useState<SizingVariable>("L");
   const [sizingMessage, setSizingMessage] = useState("");
   const input = useView((s) => s.input);
@@ -113,7 +113,6 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
   return (
     <div className="p-2">
       <div className="hx-panel mb-2 p-3">
-        {focus === "geometry" ? <div className="mb-2 text-[13px] font-semibold tracking-wide">EXCHANGER TYPE</div> : null}
         <SelectField
           label="Exchanger type"
           value={g.type}
@@ -121,19 +120,15 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
           onChange={(t) => switchType(t)}
           tip="Each type keeps its own configuration; switching does not discard your edits."
         />
-        {focus === "all" ? <>
-          <SelectField label="Calculation workflow" value={input.mode} options={[["rating", "Rating — predict outlet temperatures"], ["duty", "Duty — specified outlet temperatures"]]} onChange={(mode) => setInput((x) => ({ ...x, mode }))} />
-          {input.mode === "duty" ? <SelectField label="Energy balance duty basis" value={input.dutySource} options={[["hot", "Hot-side Q"], ["cold", "Cold-side Q"], ["specified", "Specified duty"]]} onChange={(dutySource) => setInput((x) => ({ ...x, dutySource }))} /> : null}
-          {input.mode === "duty" && input.dutySource === "specified" ? <NumField label="Specified heat duty" symbol="Q" unit="kW" scale={1e-3} value={input.specifiedQ} onCommit={(specifiedQ) => setInput((x) => ({ ...x, specifiedQ }))} min={0.001} /> : null}
-          <div className="hx-label mt-2 text-[11px]">Rating solves outlet temperatures. Duty mode requires both outlet temperatures and reports energy-balance mismatch.</div>
-        </> : <p className="hx-label mt-2 text-[11px]">Choose the exchanger family, then adjust its dimensions below. Changes update the model immediately.</p>}
+        <SelectField label="Calculation workflow" value={input.mode} options={[["rating", "Rating — predict outlet temperatures"], ["duty", "Duty — specified outlet temperatures"]]} onChange={(mode) => setInput((x) => ({ ...x, mode }))} />
+        {input.mode === "duty" ? <SelectField label="Energy balance duty basis" value={input.dutySource} options={[["hot", "Hot-side Q"], ["cold", "Cold-side Q"], ["specified", "Specified duty"]]} onChange={(dutySource) => setInput((x) => ({ ...x, dutySource }))} /> : null}
+        {input.mode === "duty" && input.dutySource === "specified" ? <NumField label="Specified heat duty" symbol="Q" unit="kW" scale={1e-3} value={input.specifiedQ} onCommit={(specifiedQ) => setInput((x) => ({ ...x, specifiedQ }))} min={0.001} /> : null}
+        <div className="hx-label mt-2 text-[11px]">Rating solves outlet temperatures. Duty mode requires both outlet temperatures and reports energy-balance mismatch.</div>
         {zeroDraft ? <p className="hx-label mt-2 border-t pt-2 text-[11px]" style={{ borderColor: "var(--border)" }} role="status">Blank design: enter positive geometry, flow rates and pressure before running calculations. Use “Reset to sample” to restore a complete example.</p> : null}
       </div>
-      {focus === "all" ? <>
-        <FlowSelector />
-        <Section title="HOT STREAM" open><StreamFields which="hot" s={input.hot} set={setStream("hot")} duty={input.mode === "duty"} /></Section>
-        <Section title="COLD STREAM" open><StreamFields which="cold" s={input.cold} set={setStream("cold")} duty={input.mode === "duty"} /></Section>
-      </> : null}
+      <FlowSelector />
+      <Section title="HOT STREAM" open><StreamFields which="hot" s={input.hot} set={setStream("hot")} duty={input.mode === "duty"} /></Section>
+      <Section title="COLD STREAM" open><StreamFields which="cold" s={input.cold} set={setStream("cold")} duty={input.mode === "duty"} /></Section>
       <Section title="GEOMETRY" open>
         <div className="col-span-2">
           <SelectField
@@ -169,7 +164,7 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
         }}>Solve {sizingVariable} for required area</button>
         <div className="col-span-2 hx-label" role="status">{sizingMessage || (input.mode === "duty" ? "Fix all other dimensions and size one selected variable." : "Sizing requires duty mode with both outlet temperatures specified.")}</div>
       </Section> : null}
-      {focus === "all" ? <Section title="OPERATING CONDITIONS">
+      <Section title="OPERATING CONDITIONS">
         <NumField label="Pump efficiency" symbol="ηpump" unit="%" scale={100} value={input.operating.pumpEfficiency} onCommit={(v) => setOp({ pumpEfficiency: v })} min={0.05} />
         <NumField label="Tube-side fouling" symbol="Rfi" unit="m²K/W" value={input.operating.Rfi} onCommit={(v) => setOp({ Rfi: v })} min={0} tip="Inside-area basis" />
         <NumField label="Shell-side fouling" symbol="Rfo" unit="m²K/W" value={input.operating.Rfo} onCommit={(v) => setOp({ Rfo: v })} min={0} tip="Outside-area basis" />
@@ -179,7 +174,7 @@ export function InputPanel({ focus = "all" }: { focus?: "all" | "geometry" }) {
           options={[["auto", "Auto (by regime)"], ["gnielinski", "Gnielinski"], ["dittus-boelter", "Dittus–Boelter"], ["sieder-tate", "Sieder–Tate"]]}
           onChange={(v) => setOp({ correlation: v })}
         />
-      </Section> : null}
+      </Section>
     </div>
   );
 }

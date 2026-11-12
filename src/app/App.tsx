@@ -17,8 +17,8 @@ const HxCanvas = lazy(() => import("../three/scenes/HxCanvas").then((m) => ({ de
 const LabelOverlay = lazy(() => import("../three/scenes/labels").then((m) => ({ default: m.LabelOverlay })));
 const PerformancePanel = lazy(() => import("./PerformancePanel").then((m) => ({ default: m.PerformancePanel })));
 
-type Page = "Overview" | "3D Simulator" | "Engineering Calculator" | "Geometry Designer" | "Performance Analysis";
-const pages: Page[] = ["Overview", "3D Simulator", "Engineering Calculator", "Geometry Designer", "Performance Analysis"];
+type Page = "Overview" | "3D Simulator" | "Engineering Calculator" | "Performance Analysis";
+const pages: Page[] = ["Overview", "3D Simulator", "Engineering Calculator", "Performance Analysis"];
 const routeFromLocation = (): SiteRoute => ({ "/simulator": "Simulator", "/documentation": "Documentation", "/about": "About" } as Record<string, SiteRoute>)[window.location.pathname] ?? "Home";
 
 function download(name: string, type: string, contents: string) {
@@ -92,13 +92,14 @@ export function App() {
     <div className="flex h-dvh flex-col" style={{ background: "var(--bg)" }}>
       <SiteNav active={route} onNavigate={navigate} reducedMotion={reducedMotion} onReducedMotionChange={setReducedMotion}/>
       {route === "Home" ? <LandingPage onLaunch={() => navigate("Simulator")} reducedMotion={reducedMotion}/> : route === "Documentation" ? <main className="info-page"><article className="mx-auto max-w-4xl space-y-3">
-        <h1><span>Engineering</span> documentation</h1>
+        <h1><span>Engineering</span> Documentation</h1>
         <section className="hx-panel p-4"><h3>Calculation methods</h3><p className="hx-label">Rating mode solves outlet temperatures iteratively using effectiveness–NTU and temperature-dependent fluid properties. Duty mode uses specified terminal temperatures, compares hot and cold energy balances, computes LMTD and area adequacy. A multipass shell-and-tube unit uses a shell-pass effectiveness relation and LMTD correction factor; it is not treated as a simple single-pass counterflow exchanger.</p></section>
         <section className="hx-panel p-4"><h3>Correlations and scope</h3><p className="hx-label">Tube-side Nusselt number uses the selected/automatic Hausen, Gnielinski, Dittus–Boelter or Sieder–Tate method with validity checks. Shell-side heat transfer and pressure loss use preliminary Kern methods. Tube pressure loss uses Darcy–Weisbach with minor losses. These are preliminary engineering estimates, not detailed industrial rating and not CFD.</p></section>
         <section className="hx-panel p-4"><h3>Properties, units and limitations</h3><p className="hx-label">Calculations use SI units internally and Celsius for temperature (temperature differences equal kelvin differences). Library coverage is limited to the fluids and tabulated ranges listed in the project README; manual properties are constant over temperature. Fouling is user supplied and is not inferred from operating conditions. Inspect each result’s formula, status, assumptions and warnings before use.</p></section>
         <section className="hx-panel p-4"><h3>Profiles and visuals</h3><p className="hx-label">Temperature charts are numerical bulk-fluid profiles from a 1-D energy model. Animated particles and bands visualize calculated flow directions and bulk temperatures. No local turbulence, wall temperatures or CFD fields are calculated.</p></section>
       </article></main> : route === "About" ? <main className="info-page"><h1><span>HX</span> Studio</h1><p>HX Studio is a browser-based engineering workstation for configuring shell-and-tube and double-pipe exchangers, evaluating preliminary thermal and hydraulic performance, and inspecting synchronized parametric geometry.</p><p>Calculations run locally in your browser. Flow paths and temperature profiles are based on engineering correlations and a one-dimensional bulk model. The visual scene is an engineering visualization, not a CFD solver.</p><button type="button" className="launch-button" onClick={() => navigate("Simulator")}>Launch Simulator <span aria-hidden="true">→</span></button></main> : <div className="simulator-shell">
         <div className="simulator-project-actions">
+          <button type="button" className="hx-btn" onClick={() => useView.getState().resetInputsToZero()} title="Clear numeric engineering inputs and begin a blank design">Reset to 0</button>
           <button type="button" className="hx-btn" onClick={() => loadInput(g.type === "double-pipe" ? sampleDoublePipe : sampleConfiguration)} title={SAMPLE_CONFIGURATION_LABEL}>Reset to sample</button>
           <button type="button" className="hx-btn" onClick={exportJson}>Save JSON</button>
           <button type="button" className="hx-btn" onClick={() => fileRef.current?.click()}>Load JSON</button>
@@ -109,12 +110,11 @@ export function App() {
         <nav className="simulator-tabs" aria-label="Simulator workspace">
           {pages.map(label => <button key={label} type="button" aria-pressed={page === label} onClick={() => setPage(label)}>{label}</button>)}
         </nav>
-        {page === "Overview" ? <OverviewDashboard input={input} ev={ev} onOpen={setPage}/> : page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : <main className={`simulator-main ${page === "Geometry Designer" ? "lg:grid lg:grid-cols-[320px_minmax(0,1fr)]" : "lg:grid lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[330px_minmax(0,1fr)_350px]"} xl:overflow-hidden`}>
-        <aside className={`${page === "Geometry Designer" ? "order-1" : "order-2"} min-w-0 shrink-0 lg:order-1 lg:row-span-2 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--sidebar)" }} aria-label={page === "Geometry Designer" ? "Geometry design inputs" : "Engineering inputs"}>
-          {page === "Geometry Designer" ? <div className="px-3 pt-3"><p className="overview-eyebrow">PARAMETRIC DESIGN</p><h1 className="m-0 text-lg font-semibold">Geometry designer</h1><p className="hx-label mt-1">Edit dimensions and see the model respond immediately.</p></div> : null}
-          <InputPanel focus={page === "Geometry Designer" ? "geometry" : "all"}/>
-        </aside>
-        <section className={`${page === "Engineering Calculator" ? "hidden" : "flex"} ${page === "Geometry Designer" ? "order-2" : "order-1"} min-w-0 shrink-0 flex-col lg:order-2 xl:min-h-0 xl:overflow-y-auto`} style={{ background: "var(--workspace)" }} aria-label={page === "Geometry Designer" ? "Geometry preview" : "3D simulator"}>
+        {page === "Overview" ? <OverviewDashboard input={input} ev={ev} onOpen={setPage}/> : page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : page === "Engineering Calculator" ? <main className="simulator-main lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)] xl:grid-cols-[minmax(0,1fr)_430px] xl:overflow-hidden">
+          <aside className="order-1 min-w-0 lg:min-h-0 lg:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Engineering inputs"><InputPanel /></aside>
+          <aside className="order-2 min-w-0 lg:min-h-0 lg:overflow-y-auto" style={{ background: "var(--workspace)" }} aria-label="Calculation status and engineering parameters"><ResultsPanel ev={ev} layout={layout} components={components}/></aside>
+        </main> : <main className="simulator-main lg:grid lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_360px] xl:overflow-hidden">
+        <section className="order-1 min-w-0 shrink-0 flex-col lg:flex lg:min-h-0 xl:overflow-y-auto" style={{ background: "var(--workspace)" }} aria-label="3D simulator">
           <ViewToolbar />
           <div className="relative h-[56dvh] shrink-0 lg:h-[62dvh] xl:h-auto xl:min-h-[480px] xl:flex-1">
             <ErrorBoundary>
@@ -133,11 +133,9 @@ export function App() {
               </div>
             ) : null}
           </div>
-          {page !== "Engineering Calculator" ? <DisplayPanel components={components} /> : null}
+          <DisplayPanel components={components} />
         </section>
-        {page !== "Geometry Designer" ? <aside className="order-3 min-w-0 shrink-0 xl:min-h-0 xl:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Calculation results">
-          <ResultsPanel ev={ev} layout={layout} components={components} />
-        </aside> : null}
+        <aside className="order-2 min-w-0 xl:min-h-0 xl:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Calculation status and engineering parameters"><ResultsPanel ev={ev} layout={layout} components={components} /></aside>
       </main>}
       <footer className="flex flex-wrap items-center gap-x-4 border-t px-3 py-1 text-[11px]" style={{ borderColor: "var(--border)", background: "var(--sidebar)", color: "var(--text2)" }}>
         <span>{ev.ok ? "✓ Calculated" : "✕ Not calculated"}</span>
