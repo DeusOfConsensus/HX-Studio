@@ -13,6 +13,16 @@ npm test            # vitest, 137 tests
 npm run build
 ```
 
+## Deploying to Render
+
+The repository includes a `render.yaml` Blueprint for a Render static site. `.node-version` pins the
+build to Node.js 24.22.1. Connect the Git repository in Render and create the Blueprint; it installs
+from `package-lock.json`, runs the production build, publishes `dist/`, and rewrites client-side routes
+(such as `/simulator` and `/documentation`) to `index.html`. Pull request previews are enabled. The
+deploy requires no server process or runtime environment variables.
+
+The equivalent manual settings are build command `npm ci && npm run build` and publish directory `dist`.
+
 ## Implementation assessment
 
 | Spec area | Status |
