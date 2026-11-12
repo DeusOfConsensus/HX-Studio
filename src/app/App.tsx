@@ -110,13 +110,12 @@ export function App() {
         <nav className="simulator-tabs" aria-label="Simulator workspace">
           {pages.map(label => <button key={label} type="button" aria-pressed={page === label} onClick={() => setPage(label)}>{label}</button>)}
         </nav>
-        {page === "Overview" ? <OverviewDashboard input={input} ev={ev} onOpen={setPage}/> : page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : page === "Engineering Calculator" ? <main className="simulator-main lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)] xl:grid-cols-[minmax(0,1fr)_430px] xl:overflow-hidden">
-          <aside className="order-1 min-w-0 lg:min-h-0 lg:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Engineering inputs"><InputPanel /></aside>
-          <aside className="order-2 min-w-0 lg:min-h-0 lg:overflow-y-auto" style={{ background: "var(--workspace)" }} aria-label="Calculation status and engineering parameters"><ResultsPanel ev={ev} layout={layout} components={components}/></aside>
-        </main> : <main className="simulator-main lg:grid lg:grid-cols-[minmax(0,1fr)_330px] xl:grid-cols-[minmax(0,1fr)_360px] xl:overflow-hidden">
-        <section className="order-1 min-w-0 shrink-0 flex-col lg:flex lg:min-h-0 xl:overflow-y-auto" style={{ background: "var(--workspace)" }} aria-label="3D simulator">
+        {page === "Overview" ? <OverviewDashboard input={input} ev={ev} onOpen={setPage}/> : page === "Performance Analysis" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}><Suspense fallback={<div className="p-4 hx-label">Loading performance charts…</div>}><PerformancePanel input={input} ev={ev}/></Suspense></main> : page === "Engineering Calculator" ? <main className="simulator-main" style={{ background: "var(--workspace)" }}>
+          <aside className="mx-auto w-full max-w-6xl min-w-0" style={{ background: "var(--sidebar)" }} aria-label="Engineering inputs"><InputPanel /></aside>
+        </main> : <main className="simulator-main">
+        <section className="order-1 min-w-0 flex shrink-0 flex-col" style={{ background: "var(--workspace)" }} aria-label="3D simulator">
           <ViewToolbar />
-          <div className="relative h-[56dvh] shrink-0 lg:h-[62dvh] xl:h-auto xl:min-h-[480px] xl:flex-1">
+          <div className="relative h-[56dvh] min-h-[420px] max-h-[850px] shrink-0 lg:h-[62dvh]">
             <ErrorBoundary>
               <Suspense fallback={<div className="flex h-full items-center justify-center hx-label">Loading 3D engineering model…</div>}>
                 <HxCanvas g={g} layout={layout} ev={ev} />
@@ -135,14 +134,14 @@ export function App() {
           </div>
           <DisplayPanel components={components} />
         </section>
-        <aside className="order-2 min-w-0 xl:min-h-0 xl:overflow-y-auto" style={{ background: "var(--sidebar)" }} aria-label="Calculation status and engineering parameters"><ResultsPanel ev={ev} layout={layout} components={components} /></aside>
+        <section className="order-2 min-w-0 border-t p-2" style={{ borderColor: "var(--border)", background: "var(--sidebar)" }} aria-label="Calculation status and engineering parameters"><ResultsPanel ev={ev} layout={layout} components={components} /></section>
       </main>}
-      <footer className="flex flex-wrap items-center gap-x-4 border-t px-3 py-1 text-[11px]" style={{ borderColor: "var(--border)", background: "var(--sidebar)", color: "var(--text2)" }}>
+      {page === "3D Simulator" ? <footer className="flex flex-wrap items-center gap-x-4 border-t px-3 py-1 text-[11px]" style={{ borderColor: "var(--border)", background: "var(--sidebar)", color: "var(--text2)" }}>
         <span>{ev.ok ? "✓ Calculated" : "✕ Not calculated"}</span>
         <span>{ev.parameters.filter((p) => p.value !== null).length}/15 parameters</span>
         <span>Rendered tubes {layout.rendered}/{layout.requested}</span>
         <span>Bulk 1-D thermal model (not CFD)</span>
-      </footer></div>}
+      </footer> : null}</div>}
     </div>
   );
 }
