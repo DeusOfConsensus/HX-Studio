@@ -13,6 +13,7 @@ import { SiteNav } from "./landing/Navigation";
 import type { SiteRoute } from "./landing/routes";
 import { LandingPage } from "./landing/Landing";
 import { OverviewDashboard } from "./OverviewDashboard";
+import { openEngineeringReport } from "./report/engineeringReport";
 const HxCanvas = lazy(() => import("../three/scenes/HxCanvas").then((m) => ({ default: m.HxCanvas })));
 const LabelOverlay = lazy(() => import("../three/scenes/labels").then((m) => ({ default: m.LabelOverlay })));
 const PerformancePanel = lazy(() => import("./PerformancePanel").then((m) => ({ default: m.PerformancePanel })));
@@ -28,20 +29,6 @@ function download(name: string, type: string, contents: string) {
 }
 
 function csvCell(value: unknown) { return `"${String(value ?? "").replaceAll('"', '""')}"`; }
-function html(value: unknown) { return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;"); }
-
-function exportReport(input: ExchangerInput, ev: ReturnType<typeof evaluate>) {
-  const canvas = document.querySelector("canvas");
-  const image = canvas?.toDataURL("image/png") ?? "";
-  const rows = ev.parameters.map(p => `<tr><td>${html(p.name)} (${html(p.symbol)})</td><td>${p.value === null ? "—" : p.value.toPrecision(5)} ${html(p.unit)}</td><td>${html(p.status)}</td><td><code>${html(p.formula)}</code><br>${html(p.inputs.join("; "))}<br>${html(p.assumptions.join("; "))}</td></tr>`).join("");
-  const warnings = ev.issues.map(i => `<li>${html(i.severity)}: ${html(i.message)}</li>`).join("");
-  const profileRows = ev.profile?.xi.filter((_, i) => i % 10 === 0).map((x, i) => `<tr><td>${(x * 100).toFixed(0)}%</td><td>${ev.profile!.Th[i * 10].toFixed(2)} °C</td><td>${ev.profile!.Tc[i * 10].toFixed(2)} °C</td></tr>`).join("") ?? "";
-  const popup = window.open("", "_blank", "width=1000,height=800");
-  if (!popup) { window.alert("Allow the report window to open, then choose Save as PDF in the print dialog."); return; }
-  popup.document.write(`<!doctype html><html><head><title>HX Studio Engineering Report</title><style>body{font:14px Arial;color:#17212a;margin:36px}h1{color:#087f82}table{border-collapse:collapse;width:100%;margin-bottom:20px}td,th{border:1px solid #9aa7b2;padding:7px;text-align:left;vertical-align:top}img{max-width:100%;max-height:420px}.muted{color:#52616d}code{white-space:normal;font-size:11px}@media print{button{display:none}tr{break-inside:avoid}}</style></head><body><h1>HX Studio — Engineering Report</h1><p class="muted">Generated locally · ${html(new Date().toLocaleString())}</p><h2>Configuration and operating conditions</h2><p>${html(input.geometry.type)} · ${html(input.geometry.flow)} · ${html(input.mode)} mode · ${input.geometry.Nt} tubes × ${input.geometry.L} m</p><p>Geometry: di ${input.geometry.di} m; wall ${input.geometry.t} m; shell/outer pipe ${input.geometry.Ds} m; pitch ${input.geometry.pitch} m; ${input.geometry.tubePasses} tube passes, ${input.geometry.shellPasses} shell passes; baffle spacing ${input.geometry.baffleSpacing} m, cut ${input.geometry.baffleCut}.</p><p>Hot: ${html(input.hot.label)}, ${input.hot.Tin} °C in, ${input.hot.Tout ?? "calculated"} °C out, ${input.hot.mdot} kg/s · Cold: ${html(input.cold.label)}, ${input.cold.Tin} °C in, ${input.cold.Tout ?? "calculated"} °C out, ${input.cold.mdot} kg/s.</p><p>Fluid properties at evaluation temperature: hot ρ ${ev.state?.propsHot.rho ?? "—"} kg/m³, Cp ${ev.state?.propsHot.cp ?? "—"} J/kgK, μ ${ev.state?.propsHot.mu ?? "—"} Pa·s, k ${ev.state?.propsHot.k ?? "—"} W/mK; cold ρ ${ev.state?.propsCold.rho ?? "—"} kg/m³, Cp ${ev.state?.propsCold.cp ?? "—"} J/kgK, μ ${ev.state?.propsCold.mu ?? "—"} Pa·s, k ${ev.state?.propsCold.k ?? "—"} W/mK.</p>${image ? `<h2>3D model</h2><img src="${image}" alt="3D heat exchanger model screenshot">` : ""}<h2>Temperature profile data</h2><table><thead><tr><th>Hot-side position</th><th>Hot bulk temperature</th><th>Cold bulk temperature</th></tr></thead><tbody>${profileRows || "<tr><td colspan='3'>Profile unavailable</td></tr>"}</tbody></table><h2>Engineering results, equations and assumptions</h2><table><thead><tr><th>Parameter</th><th>Value</th><th>Status</th><th>Formula, inputs and assumptions</th></tr></thead><tbody>${rows}</tbody></table><h2>Warnings and scope</h2><p>Local correlation-based rating model; simplified Kern shell-side method where applicable. The temperature profile is an estimated bulk 1-D model; this application does not compute CFD.</p><ul>${warnings}</ul><button onclick="print()">Print / Save as PDF</button></body></html>`);
-  popup.document.close();
-}
-
 export function App() {
   const [page, setPage] = useState<Page>(() => window.location.pathname === "/simulator" ? "3D Simulator" : "Overview");
   const [route, setRoute] = useState<SiteRoute>(routeFromLocation);
@@ -105,7 +92,7 @@ export function App() {
           <button type="button" className="hx-btn" onClick={() => fileRef.current?.click()}>Load JSON</button>
           <input ref={fileRef} className="hidden" type="file" accept="application/json,.json" onChange={e => void importJson(e.target.files?.[0])} aria-label="Load HX Studio project JSON" />
           <button type="button" className="hx-btn" onClick={exportCsv}>Export CSV</button>
-          <button type="button" className="hx-btn" onClick={() => exportReport(input, ev)}>Report / PDF</button>
+          <button type="button" className="hx-btn" onClick={() => openEngineeringReport(input, ev)}>Report / PDF</button>
         </div>
         <nav className="simulator-tabs" aria-label="Simulator workspace">
           {pages.map(label => <button key={label} type="button" aria-pressed={page === label} onClick={() => setPage(label)}>{label}</button>)}
