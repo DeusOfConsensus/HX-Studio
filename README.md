@@ -9,19 +9,9 @@ results are intended for preliminary analysis and learning, not certification or
 npm install
 npm run dev         # open the 3D simulator
 npm run typecheck   # tsc --noEmit
-npm test            # vitest, 137 tests
+npm test            # Vitest unit, integration and analytic benchmark checks
 npm run build
 ```
-
-## Deploying to Render
-
-The repository includes a `render.yaml` Blueprint for a Render static site. `.node-version` pins the
-build to Node.js 24.22.1. Connect the Git repository in Render and create the Blueprint; it installs
-from `package-lock.json`, runs the production build, publishes `dist/`, and rewrites client-side routes
-(such as `/simulator` and `/documentation`) to `index.html`. Pull request previews are enabled. The
-deploy requires no server process or runtime environment variables.
-
-The equivalent manual settings are build command `npm ci && npm run build` and publish directory `dist`.
 
 ## Implementation assessment
 
@@ -33,7 +23,7 @@ The equivalent manual settings are build command `npm ci && npm run build` and p
 | Design sizing | One variable at a time (L, Nt or di) in duty mode; solver re-runs at each trial |
 | Parametric 3D | Shell-and-tube and double-pipe; camera, selection, exploded view, section plane, hide/isolate |
 | Flow and thermal visualization | Directions and particle animation use selected configuration and calculated velocity; temperature bands derive from 1-D profiles |
-| App workspaces | Overview, simulator, calculator/results, geometry inputs, analysis and documentation navigation |
+| App workspaces | Overview, 3D Simulator, Engineering Calculator, Performance Analysis and Documentation; Geometry Designer was removed as a duplicate |
 | Performance analysis | Temperature profile, sensitivity (nine inputs), duty/effectiveness, pressure drop, Reynolds, resistance and effectiveness–NTU charts |
 | Local reports and files | JSON save/load, CSV results export, print-to-PDF report with model screenshot when browser capture is available |
 | Responsive interface | Responsive stacked, two-column and three-column layouts; keyboard focus, reduced motion and touch-sized controls. Physical touch devices are not formally verified. |
@@ -70,14 +60,25 @@ The equivalent manual settings are build command `npm ci && npm run build` and p
 6. Fouling is a user input (not predicted). One overall pump efficiency for both circuits.
 7. Sizing solves one variable at a time by bisection; non-monotonic cases return `no_bracket`.
 
+## Verification scope
+
+The analytic benchmark suite checks fixed reference values for parallel- and counterflow ε–NTU
+effectiveness (including the equal-capacity-rate limit), LMTD, and a simple heat-capacity energy
+balance. Expected values are fixed in the tests rather than calculated by calling the implementation
+under test. These are equation-level regression checks; they do **not** validate the complete solver
+against plant data or independently validate empirical heat-transfer and pressure-drop correlations.
+In particular, shell-side results remain preliminary Kern estimates until benchmark cases are added
+against independently sourced data for realistic baffled exchangers.
+
 ## Workflows and exports
 
 - **Rating** predicts outlet temperatures from geometry and inlet conditions. **Duty** accepts both outlet
   temperatures and displays the energy-balance discrepancy. Design sizing explicitly solves one selected
   dimension; other values remain fixed. Unsupported or underdetermined inputs produce an error instead of a guessed result.
-- **Overview** is the lightweight landing page and carries the requested “Built by Asmodeus” attribution.
-  Engineering Calculator shows inputs and all 15 expandable result records; Geometry Designer exposes editable
-  geometry beside the synchronized model; Performance Analysis reruns the solver across selected input changes.
+- **Overview** is the lightweight landing page and carries the “Built by Asmodeus” attribution.
+  **Engineering Calculator** is where users enter and validate inputs. **3D Simulator** is where they inspect
+  the model, simulation controls, status, and engineering results. **Performance Analysis** reruns the solver
+  across selected input changes. The former Geometry Designer was removed because it duplicated calculator inputs.
 - **Save JSON / Load JSON** store project configuration locally. **Export CSV** exports parameter values and
   formulas. **Report / PDF** opens a print-ready local report; choose “Save as PDF” in the browser print dialog.
 
@@ -99,6 +100,21 @@ The equivalent manual settings are build command `npm ci && npm run build` and p
 - Labels use a custom overlay (`three/scenes/labels.tsx`) because drei `<Html>` dropped a label and threw
   `removeChild` errors on unmount.
 - The sample's tube count was reduced from 40 to 32: 40 tubes did not physically fit a 203 mm shell.
+
+## Engineering scope and roadmap
+
+The current shell-side Kern method is explicitly preliminary. The next engineering step is to add
+independently sourced shell-and-tube benchmark cases, then implement and compare a correction-based method
+such as Bell–Delaware, including its leakage, bypass, and baffle-window corrections. Keep methods and
+assumptions selectable and visible so a more detailed model does not silently change existing results.
+
+Mechanical pressure-vessel design is a separate future scope. It would need an explicitly selected code
+edition, applicable material and fabrication rules, and qualified engineering review; thermal/hydraulic
+benchmark coverage alone does not make a mechanical design module suitable for construction. [ASME BPVC
+Section VIII](https://www.asme.org/codes-standards/find-codes-standards/bpvc-viii-1-bpvc-section-viii-rules-construction-pressure-vessels-division-1)
+covers pressure-vessel construction, inspection, testing, and certification, while [TEMA publishes
+separate shell-and-tube exchanger standards](https://tema.org/standards/). Confirm the governing editions
+when that work begins.
 
 ## Known 3D limitations
 
