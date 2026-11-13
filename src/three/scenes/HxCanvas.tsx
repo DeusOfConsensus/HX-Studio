@@ -26,7 +26,9 @@ function CameraRig({ g }: { g: GeometryInput }) {
   const controls = useThree((s) => s.controls) as unknown as ControlsLike | null;
   const invalidate = useThree((s) => s.invalidate);
   const cmd = useView((s) => s.viewCmd);
+  const zoomCmd = useView((s) => s.zoomCmd);
   const done = useRef(-1);
+  const zoomDone = useRef(-1);
   useEffect(() => {
     if (!controls || done.current === cmd.n) return;
     done.current = cmd.n;
@@ -47,6 +49,21 @@ function CameraRig({ g }: { g: GeometryInput }) {
     controls.update();
     invalidate();
   }, [cmd, controls, camera, g, invalidate]);
+
+  useEffect(() => {
+    if (!controls || zoomDone.current === zoomCmd.n) return;
+    zoomDone.current = zoomCmd.n;
+
+    const offset = camera.position.clone().sub(controls.target);
+    const distance = offset.length();
+    if (distance === 0) return;
+
+    // Dolly along the current viewing vector so zooming preserves the user's orbit angle.
+    const nextDistance = THREE.MathUtils.clamp(distance * zoomCmd.factor, 0.3, 40);
+    camera.position.copy(controls.target).add(offset.multiplyScalar(nextDistance / distance));
+    controls.update();
+    invalidate();
+  }, [zoomCmd, controls, camera, invalidate]);
   return null;
 }
 

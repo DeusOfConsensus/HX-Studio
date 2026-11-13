@@ -6,6 +6,7 @@ export function ViewToolbar() {
   const goView = useView((s) => s.goView);
   const running = useView((s) => s.running);
   const setView = useView((s) => s.setView);
+  const zoomBy = useView((s) => s.zoomBy);
   const views: Array<[ViewName, string]> = [["iso", "Isometric"], ["front", "Front"], ["side", "Side"], ["top", "Top"], ["fit", "Fit"]];
   return (
     <div className="flex flex-wrap items-center gap-1 border-b p-2" style={{ borderColor: "var(--border)", background: "var(--sidebar)" }} role="toolbar" aria-label="3D view controls">
@@ -13,6 +14,10 @@ export function ViewToolbar() {
         {running ? "❚❚ Pause" : "▶ Resume"}
       </button>
       <span className="mx-1 hidden h-6 border-l sm:block" style={{ borderColor: "var(--border)" }} aria-hidden="true" />
+      <div className="flex items-center gap-1" role="group" aria-label="Zoom simulator view">
+        <button type="button" className="hx-btn min-w-10 text-lg font-semibold leading-none" onClick={() => zoomBy(0.82)} aria-label="Zoom in" title="Zoom in">+</button>
+        <button type="button" className="hx-btn min-w-10 text-lg font-semibold leading-none" onClick={() => zoomBy(1 / 0.82)} aria-label="Zoom out" title="Zoom out">−</button>
+      </div>
       {views.map(([k, l]) => (
         <button key={k} type="button" className="hx-btn" onClick={() => goView(k)}>
           {l}

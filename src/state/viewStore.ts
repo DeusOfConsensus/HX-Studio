@@ -69,6 +69,8 @@ export interface ViewState {
 
   viewCmd: { name: ViewName; n: number };
   goView: (name: ViewName) => void;
+  zoomCmd: { factor: number; n: number };
+  zoomBy: (factor: number) => void;
 }
 
 export const useView = create<ViewState>((set) => ({
@@ -130,4 +132,6 @@ export const useView = create<ViewState>((set) => ({
 
   viewCmd: { name: "iso", n: 0 },
   goView: (name) => set((s) => ({ viewCmd: { name, n: s.viewCmd.n + 1 } })),
+  zoomCmd: { factor: 1, n: 0 },
+  zoomBy: (factor) => set((s) => ({ zoomCmd: { factor, n: s.zoomCmd.n + 1 } })),
 }));
